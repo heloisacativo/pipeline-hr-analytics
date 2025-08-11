@@ -1,0 +1,76 @@
+version: '3.9'
+
+x-airflow-common:
+  &airflow-common
+  image: apache/airflow:2.8.1
+  environment:
+    &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: ${AIRFLOW__DATABASE__SQL_ALCHEMY_CONN}
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
+    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY}
+    OBJECT_PREFIX: ${OBJECT_PREFIX}
+    OCI_BUCKET_NAME: ${OCI_BUCKET_NAME}
+    OCI_PROFILE: ${OCI_PROFILE}
+    FILE_PATH: ${FILE_PATH}
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
+    AIRFLOW__WEBSERVER__RBAC: 'true'
+    ORACLE_HOME: /opt/airflow/wallet
+    TNS_ADMIN: /opt/airflow/wallet
+    ORACLE_USER: admin
+    ORACLE_PASSWORD: ${ORACLE_WALLET_PASSWORD}
+    LD_LIBRARY_PATH: /usr/lib/oracle/21/client64/lib
+    _PIP_ADDITIONAL_REQUIREMENTS: >-
+      kagglehub>=0.1.0
+      oci>=2.0.0
+      oci-cli>=3.0.0
+      cx_Oracle>=8.3.0
+      pandas>=2.0.0
+      pyarrow>=14.0.1
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ./plugins:/opt/airflow/plugins
+    - ./infra/wallet:/opt/airflow/wallet:ro
+    - ./outputs.json:/opt/airflow/outputs.json
+    - ./data:/opt/airflow/data 
+    - ${USERPROFILE}/.oci:/home/airflow/.oci:ro
+  user: "${AIRFLOW_UID:-50000}:0"
+  depends_on:
+    - postgres
+
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+
+  webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8080:8080"
+
+  scheduler:
+    <<: *airflow-common
+    command: scheduler
+
+  init:
+    <<: *airflow-common
+    command: bash -c "airflow db init && airflow users create \
+      --username ${AIRFLOW_USER} \
+      --password ${AIRFLOW_PASS} \
+      --firstname Admin \
+      --lastname User \
+      --role Admin \
+      --email admin@example.com"
+
+volumes:
+  postgres-db-volume:
