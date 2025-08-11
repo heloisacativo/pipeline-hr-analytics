@@ -4,6 +4,8 @@ This project implements an ETL pipeline orchestrated by **Apache Airflow**, usin
 
 ---
 
+![Pipeline Architecture](architecture.png)
+
 ## Pipeline Flow
 
 ### 1. Extraction
