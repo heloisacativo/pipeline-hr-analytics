@@ -1,0 +1,9 @@
+compartment_id     = "ocid1.tenancy.oc1..example"
+db_display_name    = "HRAnalyticsADB"
+db_name            = "HRANALYTICS"
+cpu_core_count     = 1
+data_storage_size_in_tbs = 1
+subnet_id          = "ocid1.subnet.oc1.sa-saopaulo-1.example"
+adb_admin_password = "EXAMPLE_PASSWORD"
+adb_wallet_password  = "EXAMPLE_PASSWORD"
+whitelisted_ips      = ["201.75.17.59"]
